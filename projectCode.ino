@@ -15,6 +15,12 @@ float tempHigh = 21.0;     // Turn heater OFF if above 21°C
 int lightThreshold = 600;  // Adjust based on room lighting
 int soundThreshold = 100;  // Reduced for demo
 
+//==// Define the B-value of the thermistor.
+// This value is a property of the thermistor used in the Grove - Temperature Sensor,
+// and used to convert from the analog value it measures and a temperature value.
+  const int B = 3975;
+//===
+
 void setup() {
   Serial.begin(9600);       // Serial monitor
 
@@ -28,9 +34,12 @@ void loop() {
   int lightRaw = analogRead(lightPin);
   int soundRaw = analogRead(soundPin);
 
-  // Convert raw temperature to degrees Celsius
-  // Grove LM35 sensor: 10mV per °C, ADC reference = 5V, 10-bit ADC
-  float temperature = tempRaw * (5.0 / 1023.0) * 100.0;
+// =======Temperature calculation======
+// Determine the current resistance of the thermistor based on the sensor value.
+  float resistance = (float)(1023-tempRaw)*10000/tempRaw;
+// Calculate the temperature based on the resistance value.
+  float temperature = 1/(log(resistance/10000)/B+1/298.15)-273.15;
+//
 
   bool occupied = (soundRaw > soundThreshold);
 

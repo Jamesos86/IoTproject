@@ -28,6 +28,27 @@ void setup() {
 }
 
 void loop() {
+  #include <WiFi.h>
+#include <HTTPClient.h>
+
+const char* ssid = "YOUR_WIFI_NAME";
+const char* password = "YOUR_WIFI_PASSWORD";
+
+String sheetURL = "YOUR_WEB_APP_URL_HERE";
+
+void sendData(float temperature, int lightRaw, bool occupied, bool heaterStatus, bool lightsStatus) {
+  if(WiFi.status()== WL_CONNECTED){
+    HTTPClient http;
+    String url = sheetURL + "?temperature=" + String(temperature) 
+                 + "&light=" + String(lightRaw)
+                 + "&occupancy=" + (occupied ? "Yes" : "No")
+                 + "&heater=" + (heaterStatus ? "ON" : "OFF")
+                 + "&lights=" + (lightsStatus ? "ON" : "OFF");
+    http.begin(url);
+    int code = http.GET();  // For GET method, POST can also be used
+    http.end();
+  }
+}
   // ===== Read sensors =====
   int tempRaw = analogRead(tempPin);
   int lightRaw = analogRead(lightPin);

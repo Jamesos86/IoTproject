@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Room Dashboard</title>
+  <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+
+  <h1>Smart Room Energy Saver</h1>
+
+  <div class="container">
+    <div class="card">
+      <h2>Temperature</h2>
+      <div class="value" id="temp">-- °C</div>
+    </div>
+
+    <div class="card">
+      <h2>Light</h2>
+      <div class="value" id="light">--</div>
+    </div>
+
+    <div class="card">
+      <h2>Occupancy</h2>
+      <div class="value" id="occupancy">--</div>
+    </div>
+
+    <div class="card">
+      <h2>Heater</h2>
+      <div class="value" id="heater">--</div>
+    </div>
+
+    <div class="card">
+      <h2>Lights</h2>
+      <div class="value" id="lights">--</div>
+    </div>
+  </div>
+
+  <script>
+    // TEMPORARY FAKE DATA (we'll replace this later with live sensor values)
+    document.getElementById("temp").innerText = "19°C";
+    document.getElementById("light").innerText = "540";
+    document.getElementById("occupancy").innerText = "Yes";
+    document.getElementById("heater").innerText = "OFF";
+    document.getElementById("lights").innerText = "ON";
+  </script>
+
+</body>
+</html>

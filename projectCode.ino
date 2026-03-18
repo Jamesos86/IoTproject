@@ -1,28 +1,27 @@
 // Grove Smart Room Demo - Local Only
 
+#include <math.h>
+
 // Grove analog sensors
-const int tempPin = A0;    // Temperature sensor (LM35-style)
-const int lightPin = A1;   // Light sensor
-const int soundPin = A2;   // Sound sensor / occupancy
+const int tempPin = A0;    
+const int lightPin = A1;   
+const int soundPin = A2;   
 
 // Grove digital outputs
-const int ledPin = 4;      // D4 - LED simulating lights
-const int relayPin = 5;    // D5 - Relay simulating heater
+const int ledPin = 4;      
+const int relayPin = 5;    
 
-// Thresholds (adjust after testing)
-float tempLow = 18.0;      // Turn heater ON if below 18°C
-float tempHigh = 21.0;     // Turn heater OFF if above 21°C
-int lightThreshold = 600;  // Adjust based on room lighting
-int soundThreshold = 100;  // Reduced for demo
+// Thresholds
+float tempLow = 18.0;      
+float tempHigh = 21.0;     
+int lightThreshold = 600;  
+int soundThreshold = 100;  
 
-//==// Define the B-value of the thermistor.
-// This value is a property of the thermistor used in the Grove - Temperature Sensor,
-// and used to convert from the analog value it measures and a temperature value.
-  const int B = 3975;
-//===
+// Thermistor constant
+const int B = 3975;
 
 void setup() {
-  Serial.begin(9600);       // Serial monitor
+  Serial.begin(9600);
 
   pinMode(ledPin, OUTPUT);
   pinMode(relayPin, OUTPUT);
@@ -30,39 +29,58 @@ void setup() {
 
 void loop() {
   // ===== Read sensors =====
-  int tempRaw = analogRead(tempPin);   // 0–1023
+  int tempRaw = analogRead(tempPin);
   int lightRaw = analogRead(lightPin);
   int soundRaw = analogRead(soundPin);
 
-// =======Temperature calculation======
-// Determine the current resistance of the thermistor based on the sensor value.
-  float resistance = (float)(1023-tempRaw)*10000/tempRaw;
-// Calculate the temperature based on the resistance value.
-  float temperature = 1/(log(resistance/10000)/B+1/298.15)-273.15;
-//
+  // ===== Temperature calculation (Thermistor) =====
+  float resistance = (1023.0 - tempRaw) * 10000.0 / tempRaw;
+  float temperature = 1 / (log(resistance / 10000.0) / B + 1 / 298.15) - 273.15;
 
   bool occupied = (soundRaw > soundThreshold);
 
-  // ===== Print sensor readings =====
-  Serial.print("Temperature (°C): "); Serial.println(temperature);
-  Serial.print("Light Level: "); Serial.println(lightRaw);
-  Serial.print("Sound Level: "); Serial.println(soundRaw);
-  Serial.print("Occupied: "); Serial.println(occupied ? "Yes" : "No");
-  Serial.println("--------");
-
   // ===== Heater control =====
+  bool heaterOn = false;
   if (temperature < tempLow && occupied) {
-    digitalWrite(relayPin, HIGH);  // Heater ON
+    digitalWrite(relayPin, HIGH);
+    heaterOn = true;
   } else if (temperature > tempHigh) {
-    digitalWrite(relayPin, LOW);   // Heater OFF
+    digitalWrite(relayPin, LOW);
+    heaterOn = false;
   }
 
   // ===== Light control =====
+  bool lightOn = false;
   if (lightRaw < lightThreshold && occupied) {
-    digitalWrite(ledPin, HIGH);    // Lights ON
+    digitalWrite(ledPin, HIGH);
+    lightOn = true;
   } else {
-    digitalWrite(ledPin, LOW);     // Lights OFF
+    digitalWrite(ledPin, LOW);
+    lightOn = false;
   }
 
-  delay(500);  // Small delay for responsive demo
+  // ===== Clean Serial Output =====
+  Serial.println("----- Smart Room Status -----");
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.println(" C");
+
+  Serial.print("Light Level: ");
+  Serial.println(lightRaw);
+
+  Serial.print("Sound Level: ");
+  Serial.println(soundRaw);
+
+  Serial.print("Occupied: ");
+  Serial.println(occupied ? "Yes" : "No");
+
+  Serial.print("Heater: ");
+  Serial.println(heaterOn ? "ON" : "OFF");
+
+  Serial.print("Lights: ");
+  Serial.println(lightOn ? "ON" : "OFF");
+
+  Serial.println("-----------------------------\n");
+
+  delay(500);
 }

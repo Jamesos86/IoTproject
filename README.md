@@ -6,7 +6,7 @@ environmental conditions to turn a heater (relay) and lights (LED) on or off as 
 practical prototype demonstrates energy efficiency aligned with the UN Sustainable Development Goals for 
 affordable and clean energy and climate action.
 
-Team members,
+Team members:
 James O' Sullivan - S00290432@atu.ie
 Dede Coughlan - S00290949@atu.ie
 Eanna Gallagher - S00290069@atu.ie

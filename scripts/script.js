@@ -10,12 +10,11 @@ async function updateDashboard() {
     // Last row is the latest reading
     const lastRow = rows[rows.length - 1].split(",");
 
-    // Map values to your dashboard
-    document.getElementById("temp").innerText = lastRow[1] + "°C";
-    document.getElementById("light").innerText = lastRow[2];
-    document.getElementById("occupancy").innerText = lastRow[3];
-    document.getElementById("heater").innerText = lastRow[4];
-    document.getElementById("lights").innerText = lastRow[5];
+    document.getElementById("temp").innerText = lastRow[1].trim() + "°C";
+    document.getElementById("light").innerText = lastRow[2].trim();
+    document.getElementById("occupancy").innerText = lastRow[3].trim();
+    document.getElementById("heater").innerText = lastRow[4].trim();
+    document.getElementById("lights").innerText = lastRow[5].trim();
 
   } catch (error) {
     console.error("Error fetching data:", error);

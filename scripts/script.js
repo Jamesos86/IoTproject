@@ -1,43 +1,42 @@
-// script.js - Smart Room Data Display
+// script.js - Fetch and display CSV data from Google Sheet every 5 seconds using PapaParse
+// Works regardless of header text by using column order
 
-// Replace this with your published Google Sheet CSV URL
-const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2v5fqXNJ3fSzRqGwhzyIuFL3Z8V52fnR3rY4uozvqn_LD5HQ-RRRZVCeRk77L3Wn7UhsNEVHhbVmR/pub?gid=0&single=true&output=csv';
+const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2v5fqXNJ3fSzRqGwhzyIuFL3Z8V52fnw3rY4uozvqn_LD5HQ-RRRZVCeRk77L3Wn7UhsNEVHhbVmR/pub?output=csv';
 
-async function loadData() {
-  try {
-    // Add a timestamp to bypass browser cache
-    const response = await fetch(csvUrl + '&nocache=' + new Date().getTime());
-    const csvText = await response.text();
+function loadData() {
+  // Add timestamp to URL to prevent caching
+  const url = csvUrl + '&nocache=' + new Date().getTime();
 
-    // Split into lines and headers
-    const lines = csvText.trim().split('\n');
-    const headers = lines[0].split(',');
+  Papa.parse(url, {
+    download: true,
+    header: true,       // Treat first row as header (optional)
+    skipEmptyLines: true,
+    complete: function(results) {
+      const tableBody = document.querySelector('#data-table tbody');
+      tableBody.innerHTML = ''; // Clear old rows
 
-    // Clear existing table body
-    const tableBody = document.querySelector('#data-table tbody');
-    tableBody.innerHTML = '';
+      results.data.forEach(row => {
+        const tr = document.createElement('tr');
 
-    // Loop through each row of data
-    for (let i = 1; i < lines.length; i++) {
-      const row = lines[i].split(',');
-      const tr = document.createElement('tr');
+        // Use column order instead of header text
+        const values = Object.values(row);  // get all cell values in order
+        values.forEach(val => {
+          const td = document.createElement('td');
+          td.textContent = val || '';      // empty string if missing
+          tr.appendChild(td);
+        });
 
-      row.forEach(cell => {
-        const td = document.createElement('td');
-        td.textContent = cell;
-        tr.appendChild(td);
+        tableBody.appendChild(tr);
       });
-
-      tableBody.appendChild(tr);
+    },
+    error: function(err) {
+      console.error('Error parsing CSV:', err);
     }
-
-  } catch (error) {
-    console.error('Error loading CSV:', error);
-  }
+  });
 }
 
-// Load data initially
+// Initial load
 loadData();
 
-// Refresh data every 5 seconds (optional)
+// Refresh every 5 seconds
 setInterval(loadData, 5000);

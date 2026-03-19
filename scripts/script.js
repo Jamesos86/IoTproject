@@ -1,26 +1,43 @@
-const csvURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2v5fqXNJ3fSzRqGwhzyIuFL3Z8V52fnw3rY4uozvqn_LD5HQ-RRRZVCeRk77L3Wn7UhsNEVHhbVmR/pub?gid=0&single=true&output=csv";
+// script.js - Smart Room Data Display
 
-async function updateDashboard() {
+// Replace this with your published Google Sheet CSV URL
+const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2v5fqXNJ3fSzRqGwhzyIuFL3Z8V52fnR3rY4uozvqn_LD5HQ-RRRZVCeRk77L3Wn7UhsNEVHhbVmR/pub?gid=0&single=true&output=csv';
+
+async function loadData() {
   try {
-    const response = await fetch(csvURL);
-    const data = await response.text();
+    // Add a timestamp to bypass browser cache
+    const response = await fetch(csvUrl + '&nocache=' + new Date().getTime());
+    const csvText = await response.text();
 
-    // Split into rows
-    const rows = data.trim().split("\n");
-    // Last row is the latest reading
-    const lastRow = rows[rows.length - 1].split(",");
+    // Split into lines and headers
+    const lines = csvText.trim().split('\n');
+    const headers = lines[0].split(',');
 
-    document.getElementById("temp").innerText = lastRow[1].trim() + "°C";
-    document.getElementById("light").innerText = lastRow[2].trim();
-    document.getElementById("occupancy").innerText = lastRow[3].trim();
-    document.getElementById("heater").innerText = lastRow[4].trim();
-    document.getElementById("lights").innerText = lastRow[5].trim();
+    // Clear existing table body
+    const tableBody = document.querySelector('#data-table tbody');
+    tableBody.innerHTML = '';
+
+    // Loop through each row of data
+    for (let i = 1; i < lines.length; i++) {
+      const row = lines[i].split(',');
+      const tr = document.createElement('tr');
+
+      row.forEach(cell => {
+        const td = document.createElement('td');
+        td.textContent = cell;
+        tr.appendChild(td);
+      });
+
+      tableBody.appendChild(tr);
+    }
 
   } catch (error) {
-    console.error("Error fetching data:", error);
+    console.error('Error loading CSV:', error);
   }
 }
 
-// Update every 5 seconds
-setInterval(updateDashboard, 5000);
-updateDashboard();  // Initial load
+// Load data initially
+loadData();
+
+// Refresh data every 5 seconds (optional)
+setInterval(loadData, 5000);

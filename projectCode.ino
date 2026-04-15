@@ -1,107 +1,92 @@
-// Grove Smart Room Demo - Local Only
+#include <WiFi.h>
+#include <HTTPClient.h>
 
-#include <math.h>
+// WiFi details
+const char* ssid = "YOUR_WIFI";
+const char* password = "YOUR_PASSWORD";
 
-// Grove analog sensors
-const int tempPin = A0;    
-const int lightPin = A1;   
-const int soundPin = A2;   
+// Google Script URL
+String serverName = "https://script.google.com/macros/s/AKfycbzqT3z6C0uzpQDqmGLgVu-GSuabNbnNQuGdNcVgMqvibmage1rHN5ZzxiBh3osaCWlMbg/exec";
 
-// Grove digital outputs
-const int ledPin = 4;      
-const int relayPin = 5;    
+// Sensors
+const int tempPin = A0;
+const int lightPin = A1;
+const int soundPin = A2;
+
+// Outputs
+const int ledPin = 4;
+const int relayPin = 5;
 
 // Thresholds
-float tempLow = 18.0;      
-float tempHigh = 21.0;     
-int lightThreshold = 600;  
-int soundThreshold = 100;  
-
-// Thermistor constant
-const int B = 3975;
+float tempLow = 18.0;
+float tempHigh = 21.0;
+int lightThreshold = 600;
+int soundThreshold = 100;
 
 void setup() {
   Serial.begin(9600);
 
   pinMode(ledPin, OUTPUT);
   pinMode(relayPin, OUTPUT);
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("\nConnected!");
 }
 
 void loop() {
-  #include <WiFi.h>
-#include <HTTPClient.h>
 
-const char* ssid = "YOUR_WIFI_NAME";
-const char* password = "YOUR_WIFI_PASSWORD";
-
-String sheetURL = "YOUR_WEB_APP_URL_HERE";
-
-void sendData(float temperature, int lightRaw, bool occupied, bool heaterStatus, bool lightsStatus) {
-  if(WiFi.status()== WL_CONNECTED){
-    HTTPClient http;
-    String url = sheetURL + "?temperature=" + String(temperature) 
-                 + "&light=" + String(lightRaw)
-                 + "&occupancy=" + (occupied ? "Yes" : "No")
-                 + "&heater=" + (heaterStatus ? "ON" : "OFF")
-                 + "&lights=" + (lightsStatus ? "ON" : "OFF");
-    http.begin(url);
-    int code = http.GET();  // For GET method, POST can also be used
-    http.end();
-  }
-}
-  // ===== Read sensors =====
+  // Read sensors
   int tempRaw = analogRead(tempPin);
   int lightRaw = analogRead(lightPin);
   int soundRaw = analogRead(soundPin);
 
-  // ===== Temperature calculation (Thermistor) =====
-  float resistance = (1023.0 - tempRaw) * 10000.0 / tempRaw;
-  float temperature = 1 / (log(resistance / 10000.0) / B + 1 / 298.15) - 273.15;
-
+  float temperature = tempRaw * (5.0 / 1023.0) * 100.0;
   bool occupied = (soundRaw > soundThreshold);
 
-  // ===== Heater control =====
-  bool heaterOn = false;
+  // Control logic
+  int heater = 0;
+  int led = 0;
+
   if (temperature < tempLow && occupied) {
     digitalWrite(relayPin, HIGH);
-    heaterOn = true;
+    heater = 1;
   } else if (temperature > tempHigh) {
     digitalWrite(relayPin, LOW);
-    heaterOn = false;
+    heater = 0;
   }
 
-  // ===== Light control =====
-  bool lightOn = false;
   if (lightRaw < lightThreshold && occupied) {
     digitalWrite(ledPin, HIGH);
-    lightOn = true;
+    led = 1;
   } else {
     digitalWrite(ledPin, LOW);
-    lightOn = false;
+    led = 0;
   }
 
-  // ===== Clean Serial Output =====
-  Serial.println("----- Smart Room Status -----");
-  Serial.print("Temperature: ");
-  Serial.print(temperature);
-  Serial.println(" C");
+  // Send to Google Sheets
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
 
-  Serial.print("Light Level: ");
-  Serial.println(lightRaw);
+    String url = serverName +
+      "?temp=" + String(temperature) +
+      "&light=" + String(lightRaw) +
+      "&sound=" + String(soundRaw) +
+      "&occupied=" + String(occupied) +
+      "&heater=" + String(heater) +
+      "&led=" + String(led);
 
-  Serial.print("Sound Level: ");
-  Serial.println(soundRaw);
+    http.begin(url);
+    int httpResponseCode = http.GET();
 
-  Serial.print("Occupied: ");
-  Serial.println(occupied ? "Yes" : "No");
+    Serial.println(httpResponseCode);
+    http.end();
+  }
 
-  Serial.print("Heater: ");
-  Serial.println(heaterOn ? "ON" : "OFF");
-
-  Serial.print("Lights: ");
-  Serial.println(lightOn ? "ON" : "OFF");
-
-  Serial.println("-----------------------------\n");
-
-  delay(500);
+  delay(5000);
 }

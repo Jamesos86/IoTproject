@@ -1,66 +1,117 @@
-#include <WiFi.h>
-#include <HTTPClient.h>
+#include <WiFiS3.h>
+#include <ArduinoHttpClient.h>
+#include <math.h>
 
-// WiFi details
-const char* ssid = "YOUR_WIFI";
-const char* password = "YOUR_PASSWORD";
+// ===============================
+// WiFi Details
+// ===============================
+char ssid[] = "IOT-MPSK";
+char password[] = "qpfwtnfr";
 
-// Google Script URL
-String serverName = "https://script.google.com/macros/s/AKfycbzqT3z6C0uzpQDqmGLgVu-GSuabNbnNQuGdNcVgMqvibmage1rHN5ZzxiBh3osaCWlMbg/exec";
+// ===============================
+// Google Apps Script
+// ===============================
+const char serverAddress[] = "script.google.com";
+const int port = 443;
 
-// Sensors
-const int tempPin = A0;
+String scriptPath =
+"/macros/s/AKfycbzqT3z6C0uzpQDqmGLgVu-GSuabNbnNQuGdNcVgMqvibmage1rHN5ZzxiBh3osaCWlMbg/exec";
+
+// ===============================
+// WiFi / HTTP Client
+// ===============================
+WiFiSSLClient wifi;
+HttpClient client(wifi, serverAddress, port);
+
+// ===============================
+// Pins
+// ===============================
+const int tempPin  = A0;
 const int lightPin = A1;
 const int soundPin = A2;
 
-// Outputs
-const int ledPin = 4;
+// Grove LED plugged into D4
+const int ledPin   = 4;
+
+// Relay plugged into D5
 const int relayPin = 5;
 
+// ===============================
 // Thresholds
+// ===============================
 float tempLow = 18.0;
 float tempHigh = 21.0;
+
 int lightThreshold = 600;
 int soundThreshold = 100;
 
+// ===============================
+// WiFi Connect
+// ===============================
+void connectWiFi() {
+
+  Serial.print("Connecting to WiFi");
+
+  while (WiFi.begin(ssid, password) != WL_CONNECTED) {
+    Serial.print(".");
+    delay(3000);
+  }
+
+  Serial.println();
+  Serial.println("WiFi Connected!");
+}
+
+// ===============================
+// Setup
+// ===============================
 void setup() {
   Serial.begin(9600);
+  delay(2000);
 
   pinMode(ledPin, OUTPUT);
   pinMode(relayPin, OUTPUT);
 
-  WiFi.begin(ssid, password);
+  digitalWrite(ledPin, LOW);
+  digitalWrite(relayPin, LOW);
 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("\nConnected!");
+  connectWiFi();
 }
 
+// ===============================
+// Loop
+// ===============================
 void loop() {
 
-  // Read sensors
-  int tempRaw = analogRead(tempPin);
+  // ---------------------------
+  // Read Sensors
+  // ---------------------------
+  int tempRaw  = analogRead(tempPin);
   int lightRaw = analogRead(lightPin);
   int soundRaw = analogRead(soundPin);
 
-  float temperature = tempRaw * (5.0 / 1023.0) * 100.0;
+  // Grove Temp Sensor v1.3
+  float resistance = (1023.0 - tempRaw) * 10000.0 / tempRaw;
+  float temperature =
+    1 / (log(resistance / 10000.0) / 3975 + 1 / 298.15) - 273.15;
+
   bool occupied = (soundRaw > soundThreshold);
 
-  // Control logic
+  // ---------------------------
+  // Outputs
+  // ---------------------------
   int heater = 0;
   int led = 0;
 
+  // Heater control
   if (temperature < tempLow && occupied) {
     digitalWrite(relayPin, HIGH);
     heater = 1;
-  } else if (temperature > tempHigh) {
+  } else if (temperature > tempHigh || !occupied) {
     digitalWrite(relayPin, LOW);
     heater = 0;
   }
 
+  // LED control (real LED on Arduino / Grove LED)
   if (lightRaw < lightThreshold && occupied) {
     digitalWrite(ledPin, HIGH);
     led = 1;
@@ -69,24 +120,66 @@ void loop() {
     led = 0;
   }
 
-  // Send to Google Sheets
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
+  // ---------------------------
+  // Serial Output
+  // ---------------------------
+  Serial.print("Temp: ");
+  Serial.println(temperature, 1);
 
-    String url = serverName +
-      "?temp=" + String(temperature) +
-      "&light=" + String(lightRaw) +
-      "&sound=" + String(soundRaw) +
-      "&occupied=" + String(occupied) +
-      "&heater=" + String(heater) +
-      "&led=" + String(led);
+  Serial.print("Light: ");
+  Serial.println(lightRaw);
 
-    http.begin(url);
-    int httpResponseCode = http.GET();
+  Serial.print("Sound: ");
+  Serial.println(soundRaw);
 
-    Serial.println(httpResponseCode);
-    http.end();
+  Serial.print("Occupied: ");
+  Serial.println(occupied);
+
+  Serial.print("LED: ");
+  Serial.println(led);
+
+  Serial.print("Heater: ");
+  Serial.println(heater);
+
+  // ---------------------------
+  // WiFi Check
+  // ---------------------------
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi lost...");
+    connectWiFi();
   }
+
+  // ---------------------------
+  // Send to Google Sheets
+  // ---------------------------
+  String url = scriptPath +
+               "?temp=" + String(temperature, 1) +
+               "&light=" + String(lightRaw) +
+               "&sound=" + String(soundRaw) +
+               "&occupied=" + String(occupied) +
+               "&heater=" + String(heater) +
+               "&led=" + String(led);
+
+  client.get(url);
+
+  unsigned long timeout = millis();
+
+  while (client.connected() && !client.available()) {
+    if (millis() - timeout > 8000) {
+      client.stop();
+      Serial.println("-------------------");
+      delay(5000);
+      return;
+    }
+  }
+
+  // read response silently (no extra last line)
+  client.responseStatusCode();
+  client.responseBody();
+
+  client.stop();
+
+  Serial.println("-------------------");
 
   delay(5000);
 }

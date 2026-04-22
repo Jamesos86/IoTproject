@@ -6,7 +6,7 @@
 // WiFi Details
 // ===============================
 char ssid[] = "IOT-MPSK";
-char password[] = "qpfwtnfr";
+char password[] = "pbscttbf";
 
 // ===============================
 // Google Apps Script
@@ -181,5 +181,5 @@ void loop() {
 
   Serial.println("-------------------");
 
-  delay(5000);
+  delay(3000);
 }

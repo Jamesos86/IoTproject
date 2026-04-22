@@ -27,9 +27,10 @@ function loadData() {
           row[0], // Timestamp
           row[1], // Temperature
           row[2], // Light
-          row[3], // Occupied
-          row[4], // Heater
-          row[5]  // LED / Lights
+          row[3], // Sound
+          row[4], // Occupied
+          row[5], // Heater
+          row[6]  // LED / Lights
         ];
 
         cells.forEach(val => {
@@ -51,5 +52,5 @@ function loadData() {
 // Initial load
 loadData();
 
-// Refresh every 5 seconds
-setInterval(loadData, 5000);
+// Refresh every 3 seconds
+setInterval(loadData, 3000);

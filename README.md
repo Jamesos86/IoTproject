@@ -7,7 +7,7 @@ practical prototype demonstrates energy efficiency aligned with the UN Sustainab
 affordable and clean energy and climate action. Used app.netlify.com to generate a link for our website. 
 ## Live Website
 
-[Click here to view the live Smart Room Dashboard](https://your-netlify-link.netlify.app)
+[Click here to view the live Smart Room Dashboard](https://iotsmartenergysaver.netlify.app/)
 
 Team members:
 James O' Sullivan - S00290432@atu.ie

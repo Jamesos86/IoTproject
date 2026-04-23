@@ -4,7 +4,8 @@ Smart Room Energy Saver
 Using a temperature sensor, light sensor, and sound sensor, the system detects room occupancy and monitors 
 environmental conditions to turn a heater (relay) and lights (LED) on or off as needed. This low-cost, 
 practical prototype demonstrates energy efficiency aligned with the UN Sustainable Development Goals for 
-affordable and clean energy and climate action.     
+affordable and clean energy and climate action. Used app.netlify.com to generate a link for our website. 
+Website can be viewed at [iotsmartenergysaver.netlify.app](url)
 
 Team members:
 James O' Sullivan - S00290432@atu.ie
